@@ -1,24 +1,36 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>王富团 - 出勤人数日报</title>
-<style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:sans-serif;background:#fdf2f2;padding:15px}
-    .container{max-width:800px;margin:0 auto;background:white;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);padding:20px}
-    .header{text-align:center;padding:15px;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);color:white;border-radius:8px;margin-bottom:20px}
-    .section-title{font-size:18px;color:#f5576c;font-weight:bold;margin-bottom:10px;border-bottom:2px solid #eee}
-    table{width:100%;border-collapse:collapse;margin-bottom:20px}
-    th,td{border:1px solid #ddd;padding:12px;text-align:center}
-    .row-label{background:#fafafa;font-weight:bold;text-align:left}
-    .sub-label{padding-left:20px;color:#666;font-style:italic}
-    input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;text-align:center}
-    input.is-changed { color: red !important; font-weight: bold; border-color: red; }
-    textarea{width:100%;height:100px;padding:10px;border:1px solid #ccc;border-radius:8px;resize:none}
-    .btn-export{width:100%;padding:15px;background:#f5576c;color:white;border:none;border-radius:8px;font-size:18px;font-weight:bold;cursor:pointer}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>王富团 - 出勤统计</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:sans-serif;background:#fdf2f2;padding:15px}
+        .container{max-width:800px;margin:0 auto;background:white;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);padding:20px}
+        .header{text-align:center;padding:15px;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);color:white;border-radius:8px;margin-bottom:20px}
+        .section-title{font-size:18px;color:#f5576c;font-weight:bold;margin-bottom:10px;border-bottom:2px solid #eee}
+        table{width:100%;border-collapse:collapse;margin-bottom:10px}
+        th,td{border:1px solid #ddd;padding:12px;text-align:center}
+        .row-label{background:#fafafa;font-weight:bold;text-align:left}
+        .sub-label{padding-left:20px;color:#666;font-style:italic}
+        .input-cell{display:flex; align-items:center;}
+        input{flex:1;padding:8px;border:1px solid #ccc;border-radius:4px;text-align:center;font-size:16px;width:60px}
+        .diff-tag{margin-left:5px; font-size:12px; min-width:30px; font-weight:bold}
+        .up{color:#28a745} 
+        .down{color:#dc3545} 
+        .sub-total-row{background:#f8f9fa; font-weight:bold; color:#666; font-size:14px}
+        .total-row{background:#fff9db; font-weight:bold; color:#d9480f}
+        textarea{width:100%;height:80px;padding:10px;border:1px solid #ccc;border-radius:8px;resize:none;margin-top:5px;font-size:14px}
+        .btn-group{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}
+        .btn{padding:15px;border:none;border-radius:8px;font-size:16px;font-weight:bold;color:white;cursor:pointer}
+        .btn-excel{background:#007bff}
+        .btn-img{background:#28a745}
+        #imgResult{width:100%;display:none;margin-top:15px;border:4px solid #f5576c;border-radius:8px}
+        .tip{display:none;text-align:center;color:#666;font-size:13px;margin-bottom:5px;font-weight:bold}
+        #previewArea{position:absolute;left:-9999px;width:375px;background:white;}
+    </style>
 </head>
 <body>
 <div class="container">
@@ -26,69 +38,183 @@
     
     <div class="section">
         <div class="section-title">👷 各班组出勤明细</div>
-        <table>
-            <tr><td class="row-label">1. CSCEM</td><td><input data-key="cscem"></td></tr>
-            <tr><td class="row-label">2. 温大爷</td><td style="background:#eee"></td></tr>
-            <tr><td class="row-label sub-label">　- 木工</td><td><input data-key="w_mu"></td></tr>
-            <tr><td class="row-label sub-label">　- 杂工</td><td><input data-key="w_za"></td></tr>
-            <tr><td class="row-label sub-label">　- 铁工</td><td><input data-key="w_tie"></td></tr>
-            <tr><td class="row-label">3. 预制构件</td><td style="background:#eee"></td></tr>
-            <tr><td class="row-label sub-label">　- 吊装</td><td><input data-key="pc_d"></td></tr>
-            <tr><td class="row-label sub-label">　- 注浆</td><td><input data-key="pc_z"></td></tr>
+        <table id="targetTable">
+            <tr><td class="row-label">1. CSCEM</td><td class="input-cell"><input type="number" data-key="cscem"><span class="diff-tag" id="diff_cscem"></span></td></tr>
+            <tr><td class="row-label">2. 温大爷班组</td><td style="background:#eee"></td></tr>
+            <tr><td class="row-label sub-label">　- 木工</td><td class="input-cell"><input type="number" data-key="w_mu"><span class="diff-tag" id="diff_w_mu"></span></td></tr>
+            <tr><td class="row-label sub-label">　- 杂工</td><td class="input-cell"><input type="number" data-key="w_za"><span class="diff-tag" id="diff_w_za"></span></td></tr>
+            <tr><td class="row-label sub-label">　- 铁工</td><td class="input-cell"><input type="number" data-key="w_tie"><span class="diff-tag" id="diff_w_tie"></span></td></tr>
+            <tr><td class="row-label sub-label">　- 泥工</td><td class="input-cell"><input type="number" data-key="w_ni"><span class="diff-tag" id="diff_w_ni"></span></td></tr>
+            <tr class="sub-total-row"><td class="row-label">　 [温大爷小计]</td><td><span id="sub_wen">0</span><span class="diff-tag" id="diff_sub_wen"></span></td></tr>
+            <tr><td class="row-label">3. 预制构件(PC)</td><td style="background:#eee"></td></tr>
+            <tr><td class="row-label sub-label">　- 吊装</td><td class="input-cell"><input type="number" data-key="pc_d"><span class="diff-tag" id="diff_pc_d"></span></td></tr>
+            <tr><td class="row-label sub-label">　- 注浆</td><td class="input-cell"><input type="number" data-key="pc_z"><span class="diff-tag" id="diff_pc_z"></span></td></tr>
+            <tr class="sub-total-row"><td class="row-label">　 [PC组小计]</td><td><span id="sub_pc">0</span><span class="diff-tag" id="diff_sub_pc"></span></td></tr>
+            <tr class="total-row"><td class="row-label">总计出勤人数</td><td><span id="totalVal">0</span> <span id="diff_total" class="diff-tag"></span></td></tr>
         </table>
     </div>
 
     <div class="section">
         <div class="section-title">📝 今日备注</div>
-        <textarea id="memo" data-key="wft_memo" placeholder="填写今日的特殊情况工人调动、天气影响等..."></textarea>
+        <textarea id="memo" data-key="wft_memo" placeholder="填写今日特殊情况..."></textarea>
     </div>
 
-    <button class="btn-export" onclick="submitAndExport()">✅ 提交并导出报表</button>
+    <div class="btn-group">
+        <button class="btn btn-excel" onclick="exportExcel()">📊 导出Excel</button>
+        <button class="btn btn-img" onclick="makeImage()">🖼️ 生成微信图片</button>
+    </div>
+    <p id="tipText" class="tip">🎉 生成成功！请长按下方图片发送或保存</p>
+    <img id="imgResult">
 </div>
+
+<div id="previewArea"></div>
+
 <script>
-    const prefix = "wft_v2_";
+    const prefix = "wft_final_v1_";
     const baseKey = prefix + "base";
     const draftKey = prefix + "draft";
 
     window.onload = function() {
         document.getElementById('dateDisplay').innerText = "日期：" + new Date().toLocaleDateString();
-        const base = JSON.parse(localStorage.getItem(baseKey) || '{}');
         const draft = JSON.parse(localStorage.getItem(draftKey) || '{}');
         document.querySelectorAll('input[data-key], textarea[data-key]').forEach(el => {
-            const k = el.dataset.key;
-            el.value = draft[k] || "";
-            if(el.tagName==='INPUT' && el.value != (base[k]||"")) el.classList.add('is-changed');
+            el.value = draft[el.dataset.key] || "";
             el.oninput = function() {
                 const d = JSON.parse(localStorage.getItem(draftKey) || '{}');
-                d[k] = this.value;
+                d[this.dataset.key] = this.value;
                 localStorage.setItem(draftKey, JSON.stringify(d));
-                if(this.tagName==='INPUT') this.classList.toggle('is-changed', this.value != (base[k]||""));
+                doCalc();
             };
         });
+        doCalc();
     };
-    function submitAndExport() {
-        const current = {};
-        let rows = "";
-        const dateStr = new Date().toLocaleDateString();
 
+    function doCalc() {
+        const base = JSON.parse(localStorage.getItem(baseKey) || '{}');
+        let total = 0, bTotal = 0, wSum = 0, wB = 0, pSum = 0, pB = 0;
         document.querySelectorAll('input[data-key]').forEach(inp => {
-            const label = inp.closest('tr').querySelector('.row-label').innerText;
-            current[inp.dataset.key] = inp.value || "0";
-            const style = inp.classList.contains('is-changed') ? 'style="color:red;font-weight:bold"' : '';
-            rows += `<tr><td>${label}</td><td ${style}>${inp.value || "0"}</td></tr>`;
+            const k = inp.dataset.key;
+            const v = Number(inp.value) || 0;
+            const bv = Number(base[k]) || 0;
+            total += v; bTotal += bv;
+            if(k.startsWith('w_')) { wSum += v; wB += bv; }
+            if(k.startsWith('pc_')) { pSum += v; pB += bv; }
+            updateDiffTag(document.getElementById('diff_' + k), v, bv);
+        });
+        document.getElementById('sub_wen').innerText = wSum;
+        updateDiffTag(document.getElementById('diff_sub_wen'), wSum, wB);
+        document.getElementById('sub_pc').innerText = pSum;
+        updateDiffTag(document.getElementById('diff_sub_pc'), pSum, pB);
+        document.getElementById('totalVal').innerText = total;
+        updateDiffTag(document.getElementById('diff_total'), total, bTotal);
+    }
+
+    function updateDiffTag(el, cur, base) {
+        if(!el) return;
+        const diff = cur - base;
+        if(diff > 0) { el.className = 'diff-tag up'; el.innerText = '↑' + diff; }
+        else if(diff < 0) { el.className = 'diff-tag down'; el.innerText = '↓' + Math.abs(diff); }
+        else { el.innerText = ''; }
+    }
+
+    function exportExcel() {
+        const d = new Date();
+        const dateStr = d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+        
+        // Excel 表头：仅工种和人数
+        let tableHtml = "<tr><th style='background:#f2f2f2; width:200px'>工种/班组</th><th style='background:#f2f2f2; width:100px'>出勤人数</th></tr>";
+        
+        document.querySelectorAll('#targetTable tr').forEach(row => {
+            const labelEl = row.querySelector('.row-label');
+            if(!labelEl) return;
+            const label = labelEl.innerText;
+            
+            let val = "";
+            const input = row.querySelector('input');
+            const span = row.querySelector('span:not(.diff-tag)');
+
+            if(input) {
+                val = input.value || "0";
+            } else if(span) {
+                val = span.innerText;
+            } else {
+                val = "-"; 
+            }
+            
+            tableHtml += `<tr><td>${label}</td><td>${val}</td></tr>`;
         });
 
-        const memoVal = document.getElementById('memo').value;
-        current['wft_memo'] = memoVal;
-        if(memoVal) rows += `<tr style="background:#fce4ec"><td><b>今日备注</b></td><td>${memoVal}</td></tr>`;
+        // 插入备注，不显示导出时间
+        const memoValue = document.getElementById('memo').value || "无";
+        tableHtml += `<tr><td colspan="2"></td></tr>`; // 空行
+        tableHtml += `<tr><td style='background:#f2f2f2;font-weight:bold'>今日备注</td><td>${memoValue}</td></tr>`;
 
-        localStorage.setItem(baseKey, JSON.stringify(current));
-        const template = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body><table border="1"><tr><th colspan="2" style="background:#f5576c;color:white">王富团出勤日报 (${dateStr})</th></tr>${rows}</table></body></html>`;
+        const template = `<html><meta charset="utf-8"><body><table border="1">${tableHtml}</table></body></html>`;
+        const blob = new Blob([template], {type:'application/vnd.ms-excel'});
         const a = document.createElement("a");
-        a.href = URL.createObjectURL(new Blob([template], {type:'application/vnd.ms-excel'}));
-        a.download = `王富团_出勤_${dateStr}.xls`;
+        a.href = URL.createObjectURL(blob);
+        // 修改下载文件名为：王富团_日期
+        a.download = `王富团_${dateStr}.xls`;
         a.click();
-        alert("老王幸苦了！记得把导出的文件发群里。");
+    }
+
+    async function makeImage() {
+        const pre = document.getElementById('previewArea');
+        const base = JSON.parse(localStorage.getItem(baseKey) || '{}');
+        const now = new Date();
+        const timeStr = now.getFullYear() + "-" + (now.getMonth()+1) + "-" + now.getDate() + " " + now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
+        
+        let wSum = 0, wB = 0, pSum = 0, pB = 0, total = 0, bTotal = 0;
+        let rowsHtml = "";
+
+        document.querySelectorAll('input[data-key]').forEach(inp => {
+            const k = inp.dataset.key;
+            const label = inp.closest('tr').querySelector('.row-label').innerText;
+            const v = Number(inp.value) || 0;
+            const bv = Number(base[k]) || 0;
+            total += v; bTotal += bv;
+            if(k.startsWith('w_')) { wSum += v; wB += bv; }
+            if(k.startsWith('pc_')) { pSum += v; pB += bv; }
+
+            const diff = v - bv;
+            const diffSpan = diff !== 0 ? `<span style="color:${diff>0?'#28a745':'#dc3545'};margin-left:5px">${diff>0?'↑':'↓'}${Math.abs(diff)}</span>` : "";
+            rowsHtml += `<tr><td style="padding:10px;border:1px solid #ddd;text-align:left">${label}</td><td style="padding:10px;border:1px solid #ddd;text-align:center">${v}${diffSpan}</td></tr>`;
+            
+            if(k === 'w_ni') {
+                const wd = wSum - wB;
+                const wdSpan = wd !== 0 ? `<span style="color:${wd>0?'#28a745':'#dc3545'};margin-left:5px">${wd>0?'↑':'↓'}${Math.abs(wd)}</span>` : "";
+                rowsHtml += `<tr style="background:#f8f9fa;font-weight:bold"><td style="padding:10px;border:1px solid #ddd;text-align:left">　[温大爷小计]</td><td style="padding:10px;border:1px solid #ddd;text-align:center">${wSum}${wdSpan}</td></tr>`;
+            }
+            if(k === 'pc_z') {
+                const pd = pSum - pB;
+                const pdSpan = pd !== 0 ? `<span style="color:${pd>0?'#28a745':'#dc3545'};margin-left:5px">${pd>0?'↑':'↓'}${Math.abs(pd)}</span>` : "";
+                rowsHtml += `<tr style="background:#f8f9fa;font-weight:bold"><td style="padding:10px;border:1px solid #ddd;text-align:left">　[PC组小计]</td><td style="padding:10px;border:1px solid #ddd;text-align:center">${pSum}${pdSpan}</td></tr>`;
+            }
+        });
+
+        const td = total - bTotal;
+        const tdSpan = td !== 0 ? `<span style="color:${td>0?'#28a745':'#dc3545'};margin-left:5px">${td>0?'↑':'↓'}${Math.abs(td)}</span>` : "";
+
+        pre.innerHTML = `<div style=\"padding:20px;background:#fff;border:2px solid #f5576c;border-radius:10px\">
+            <h2 style=\"text-align:center;color:#f5576c;margin-bottom:10px\">王富团 - 出勤统计</h2>
+            <table style=\"width:100%;border-collapse:collapse;margin-bottom:10px\">
+                <tr style=\"background:#f8f9fa\"><th style=\"padding:10px;border:1px solid #ddd\">工种/班组</th><th style=\"padding:10px;border:1px solid #ddd\">人数</th></tr>
+                ${rowsHtml}
+                <tr style=\"background:#fff9db;font-weight:bold\"><td style=\"padding:10px;border:1px solid #ddd\">总计人数</td><td style=\"padding:10px;border:1px solid #ddd;font-size:18px\">${total}${tdSpan}</td></tr>
+            </table>
+            <div style=\"font-size:14px;margin-bottom:10px\"><b>备注：</b>${document.getElementById('memo').value || '无'}</div>
+            <div style=\"text-align:right;font-size:11px;color:#999\">生成时间：${timeStr}</div>
+        </div>`;
+
+        const canvas = await html2canvas(pre, { scale: 2 });
+        const img = document.getElementById('imgResult');
+        img.src = canvas.toDataURL("image/png");
+        img.style.display = "block";
+        document.getElementById('tipText').style.display = "block";
+
+        const current = {};
+        document.querySelectorAll('input[data-key], textarea[data-key]').forEach(el => current[el.dataset.key] = el.value);
+        localStorage.setItem(baseKey, JSON.stringify(current));
     }
 </script>
 </body>

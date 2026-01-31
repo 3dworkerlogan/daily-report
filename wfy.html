@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>王富团 - 出勤人数日报</title>
+<style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:sans-serif;background:#fdf2f2;padding:15px}
+    .container{max-width:800px;margin:0 auto;background:white;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);padding:20px}
+    .header{text-align:center;padding:15px;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);color:white;border-radius:8px;margin-bottom:20px}
+    .section-title{font-size:18px;color:#f5576c;font-weight:bold;margin-bottom:10px;border-bottom:2px solid #eee}
+    table{width:100%;border-collapse:collapse;margin-bottom:20px}
+    th,td{border:1px solid #ddd;padding:12px;text-align:center}
+    .row-label{background:#fafafa;font-weight:bold;text-align:left}
+    .sub-label{padding-left:20px;color:#666;font-style:italic}
+    input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;text-align:center}
+    input.is-changed { color: red !important; font-weight: bold; border-color: red; }
+    textarea{width:100%;height:100px;padding:10px;border:1px solid #ccc;border-radius:8px;resize:none}
+    .btn-export{width:100%;padding:15px;background:#f5576c;color:white;border:none;border-radius:8px;font-size:18px;font-weight:bold;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header"><h1>👷 王富团 - 出勤统计报表</h1><p id="dateDisplay"></p></div>
+    
+    <div class="section">
+        <div class="section-title">👷 各班组出勤明细</div>
+        <table>
+            <tr><td class="row-label">1. CSCEM</td><td><input data-key="cscem"></td></tr>
+            <tr><td class="row-label">2. 温大爷</td><td style="background:#eee"></td></tr>
+            <tr><td class="row-label sub-label">　- 木工</td><td><input data-key="w_mu"></td></tr>
+            <tr><td class="row-label sub-label">　- 杂工</td><td><input data-key="w_za"></td></tr>
+            <tr><td class="row-label sub-label">　- 铁工</td><td><input data-key="w_tie"></td></tr>
+            <tr><td class="row-label">3. 预制构件</td><td style="background:#eee"></td></tr>
+            <tr><td class="row-label sub-label">　- 吊装</td><td><input data-key="pc_d"></td></tr>
+            <tr><td class="row-label sub-label">　- 注浆</td><td><input data-key="pc_z"></td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">📝 今日备注</div>
+        <textarea id="memo" data-key="wft_memo" placeholder="填写今日的特殊情况工人调动、天气影响等..."></textarea>
+    </div>
+
+    <button class="btn-export" onclick="submitAndExport()">✅ 提交并导出报表</button>
+</div>
+<script>
+    const prefix = "wft_v2_";
+    const baseKey = prefix + "base";
+    const draftKey = prefix + "draft";
+
+    window.onload = function() {
+        document.getElementById('dateDisplay').innerText = "日期：" + new Date().toLocaleDateString();
+        const base = JSON.parse(localStorage.getItem(baseKey) || '{}');
+        const draft = JSON.parse(localStorage.getItem(draftKey) || '{}');
+        document.querySelectorAll('input[data-key], textarea[data-key]').forEach(el => {
+            const k = el.dataset.key;
+            el.value = draft[k] || "";
+            if(el.tagName==='INPUT' && el.value != (base[k]||"")) el.classList.add('is-changed');
+            el.oninput = function() {
+                const d = JSON.parse(localStorage.getItem(draftKey) || '{}');
+                d[k] = this.value;
+                localStorage.setItem(draftKey, JSON.stringify(d));
+                if(this.tagName==='INPUT') this.classList.toggle('is-changed', this.value != (base[k]||""));
+            };
+        });
+    };
+    function submitAndExport() {
+        const current = {};
+        let rows = "";
+        const dateStr = new Date().toLocaleDateString();
+
+        document.querySelectorAll('input[data-key]').forEach(inp => {
+            const label = inp.closest('tr').querySelector('.row-label').innerText;
+            current[inp.dataset.key] = inp.value || "0";
+            const style = inp.classList.contains('is-changed') ? 'style="color:red;font-weight:bold"' : '';
+            rows += `<tr><td>${label}</td><td ${style}>${inp.value || "0"}</td></tr>`;
+        });
+
+        const memoVal = document.getElementById('memo').value;
+        current['wft_memo'] = memoVal;
+        if(memoVal) rows += `<tr style="background:#fce4ec"><td><b>今日备注</b></td><td>${memoVal}</td></tr>`;
+
+        localStorage.setItem(baseKey, JSON.stringify(current));
+        const template = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body><table border="1"><tr><th colspan="2" style="background:#f5576c;color:white">王富团出勤日报 (${dateStr})</th></tr>${rows}</table></body></html>`;
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([template], {type:'application/vnd.ms-excel'}));
+        a.download = `王富团_出勤_${dateStr}.xls`;
+        a.click();
+        alert("老王幸苦了！记得把导出的文件发群里。");
+    }
+</script>
+</body>
+</html>

@@ -4,75 +4,119 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>张庆逢 - 预制构件日报</title>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:sans-serif;background:#eef7ff;padding:15px}
-    .container{max-width:900px;margin:0 auto;background:white;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);padding:20px}
+    /* capture-area 用于包裹截图范围 */
+    #capture-area { background:#eef7ff; padding-bottom: 5px; }
+    .container{max-width:900px;margin:0 auto;background:white;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);padding:20px;position:relative}
     .header{text-align:center;padding:15px;background:linear-gradient(135deg,#4facfe 0%,#00f2fe 100%);color:white;border-radius:8px;margin-bottom:20px}
     .section{margin-bottom:25px}
     .section-title{font-size:18px;color:#007bff;font-weight:bold;margin-bottom:10px;border-bottom:2px solid #eee;padding-bottom:5px}
     table{width:100%;border-collapse:collapse;margin-bottom:10px}
     th,td{border:1px solid #ddd;padding:10px;text-align:center}
     th{background:#f8fbff}
-    .row-label{background:#fafafa;font-weight:bold;text-align:left;width:120px}
-    input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;text-align:center}
+    .row-label{background:#fafafa;font-weight:bold;text-align:left;width:100px}
+    input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;text-align:center;outline:none}
     input.is-changed { color: red !important; font-weight: bold; border-color: red; background:#fffafa}
-    textarea{width:100%;height:100px;padding:10px;border:1px solid #ccc;border-radius:8px;resize:none}
-    .btn-export{width:100%;padding:15px;background:#00a8cc;color:white;border:none;border-radius:8px;font-size:18px;font-weight:bold;cursor:pointer}
+    textarea{width:100%;height:100px;padding:10px;border:1px solid #ccc;border-radius:8px;resize:none;outline:none}
+    
+    .footer-btns{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+    .btn-export{width:100%;padding:15px;background:#00a8cc;color:white;border:none;border-radius:30px;font-size:18px;font-weight:bold;cursor:pointer}
+    .btn-image{width:100%;padding:15px;background:#07c160;color:white;border:none;border-radius:30px;font-size:18px;font-weight:bold;cursor:pointer}
+    
+    /* 时间戳水印 */
+    #timestamp-watermark { display: none; text-align: right; padding: 10px; color: #999; font-size: 12px; font-style: italic; }
+
+    /* 预览层 */
+    #preview-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    #preview-image { max-width: 100%; max-height: 80%; border: 2px solid white; border-radius: 8px; }
 </style>
 </head>
 <body>
-<div class="container">
-    <div class="header"><h1>🏗️ 张庆逢 - 预制构件报表</h1><p id="dateDisplay"></p></div>
-    
-    <div class="section">
-        <div class="section-title">1️⃣ 预制构件安装进度 (%)</div>
-        <table>
-            <thead><tr><th>区域</th><th>梁 (Beam)</th><th>板 (Slab)</th><th>柱 (Column)</th></tr></thead>
-            <tbody id="pc_body">
-                </tbody>
-        </table>
-    </div>
 
-    <div class="section">
-        <div class="section-title">2️⃣ GF 底板柱脚清理情况</div>
-        <table>
-            <tbody id="clean_body">
-                </tbody>
-        </table>
-    </div>
+<div id="capture-area">
+    <div class="container">
+        <div class="header">
+            <h1>🏗️ 张庆逢 - 预制构件报表</h1>
+            <p id="dateDisplay"></p>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">1. 1F 预制构件安装进度</div>
+            <table>
+                <thead><tr><th>区域</th><th>梁</th><th>板</th><th>柱</th></tr></thead>
+                <tbody id="pc_body_1f"></tbody>
+            </table>
+        </div>
 
-    <div class="section">
-        <div class="section-title">📝 今日备注 (将导出到文件中)</div>
-        <textarea id="memo" data-key="zqf_memo" placeholder="填写构件到场、吊装异常或其他说明..."></textarea>
-    </div>
+        <div class="section">
+            <div class="section-title">2. 2F 预制构件安装进度</div>
+            <table>
+                <thead><tr><th>区域</th><th>梁</th><th>板</th><th>柱</th></tr></thead>
+                <tbody id="pc_body_2f"></tbody>
+            </table>
+        </div>
 
-    <button class="btn-export" onclick="submitAndExport()">✅ 提交并导出报表</button>
+        <div class="section">
+            <div class="section-title">3. GF 底板柱脚清理情况</div>
+            <table>
+                <tbody id="clean_body"></tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <div class="section-title">📝 今日备注</div>
+            <textarea id="memo" data-key="zqf_memo" placeholder="填写构件到场、吊装异常或其他说明..."></textarea>
+        </div>
+
+        <div id="timestamp-watermark"></div>
+    </div>
+</div>
+
+<div class="footer-btns">
+    <button class="btn-image" onclick="generateImage()">📸 生成微信图片报表</button>
+    <button class="btn-export" onclick="submitAndExport()">✅ 提交并导出 Excel</button>
+</div>
+
+<div id="preview-overlay">
+    <p style="color:white;margin-bottom:15px">图片已生成！长按保存并发送</p>
+    <img id="preview-image" src="">
+    <button onclick="document.getElementById('preview-overlay').style.display='none'" style="margin-top:20px;padding:10px 30px;border-radius:20px;border:none;background:#ff4d4f;color:white">关闭</button>
 </div>
 
 <script>
-    const prefix = "zqf_v2_";
+    const prefix = "zqf_v3_";
     const baseKey = prefix + "base";
     const draftKey = prefix + "draft";
 
     window.onload = function() {
-        document.getElementById('dateDisplay').innerText = "日期：" + new Date().toLocaleDateString();
+        document.getElementById('dateDisplay').innerText = "填报日期：" + new Date().toLocaleDateString();
         
-        // 动态生成构件安装行 (Zone A-D)
-        const zones = ['A', 'B', 'C', 'D'];
+        const zones = ['A', 'B', 'C', 'D', 'E']; // 修正为 A-E 五个区域
+        
+        // 生成 1F 行
+        const body1f = document.getElementById('pc_body_1f');
         zones.forEach(z => {
-            document.getElementById('pc_body').innerHTML += `
-                <tr><td class="row-label">Zone ${z}</td>
-                <td><input data-key="z${z}_bm"></td><td><input data-key="z${z}_sl"></td><td><input data-key="z${z}_cl"></td></tr>`;
+            body1f.innerHTML += `<tr><td class="row-label">Zone ${z}</td>
+                <td><input data-key="1f_z${z}_bm"></td><td><input data-key="1f_z${z}_sl"></td><td><input data-key="1f_z${z}_cl"></td></tr>`;
         });
 
-        // 动态生成清理行 (Zone A-E)
-        const cleanZones = ['A', 'B', 'C', 'D', 'E'];
-        cleanZones.forEach(z => {
-            document.getElementById('clean_body').innerHTML += `
-                <tr><td class="row-label">Zone ${z} 清理</td><td><input data-key="clean_${z}"></td></tr>`;
+        // 生成 2F 行
+        const body2f = document.getElementById('pc_body_2f');
+        zones.forEach(z => {
+            body2f.innerHTML += `<tr><td class="row-label">Zone ${z}</td>
+                <td><input data-key="2f_z${z}_bm"></td><td><input data-key="2f_z${z}_sl"></td><td><input data-key="2f_z${z}_cl"></td></tr>`;
         });
 
+        // 生成清理行
+        const cleanBody = document.getElementById('clean_body');
+        zones.forEach(z => {
+            cleanBody.innerHTML += `<tr><td class="row-label">Zone ${z} 清理</td><td><input data-key="clean_${z}"></td></tr>`;
+        });
+
+        // 加载数据
         const base = JSON.parse(localStorage.getItem(baseKey) || '{}');
         const draft = JSON.parse(localStorage.getItem(draftKey) || '{}');
 
@@ -90,6 +134,24 @@
         });
     };
 
+    // 图片生成
+    async function generateImage() {
+        const watermark = document.getElementById('timestamp-watermark');
+        watermark.innerText = "张庆逢确认于: " + new Date().toLocaleString();
+        watermark.style.display = "block";
+
+        html2canvas(document.getElementById('capture-area'), {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: "#eef7ff"
+        }).then(canvas => {
+            watermark.style.display = "none";
+            document.getElementById('preview-image').src = canvas.toDataURL("image/png");
+            document.getElementById('preview-overlay').style.display = "flex";
+        });
+    }
+
+    // Excel 导出
     function submitAndExport() {
         const current = {};
         let rows = "";
@@ -107,7 +169,7 @@
                     tr.querySelectorAll('input').forEach((inp, idx) => {
                         current[inp.dataset.key] = inp.value || "0";
                         const style = inp.classList.contains('is-changed') ? 'style="color:red;font-weight:bold"' : '';
-                        const colName = heads.length > 0 ? heads[idx+1] : "进度值";
+                        const colName = heads.length > 0 ? heads[idx+1] : "完成数";
                         rows += `<tr><td>　${colName}</td><td ${style}>${inp.value || "0"}</td></tr>`;
                     });
                 });
@@ -124,7 +186,7 @@
         a.href = URL.createObjectURL(new Blob([template], {type:'application/vnd.ms-excel'}));
         a.download = `张庆逢_日报_${dateStr}.xls`;
         a.click();
-        alert("老张幸苦了！记得把导出的文件发群里。");
+        alert("老张辛苦了！数据已同步为基准，Excel已导出。");
     }
 </script>
 </body>

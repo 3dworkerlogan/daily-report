@@ -4,93 +4,117 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>尹兵兵 - 土建进度日报</title>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:sans-serif;background:#f0f2f5;padding:15px;color:#333}
-    .container{max-width:900px;margin:0 auto;background:white;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.1);overflow:hidden}
-    .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:20px;text-align:center}
-    .content{padding:20px}
-    .section{margin-bottom:30px}
-    .section-title{font-size:18px;color:#667eea;font-weight:bold;margin-bottom:12px;border-bottom:2px solid #eee;padding-bottom:5px}
-    table{width:100%;border-collapse:collapse;margin-bottom:10px;table-layout:fixed}
-    th,td{border:1px solid #e0e0e0;padding:10px;text-align:center;font-size:14px}
-    th{background:#f8f9fa;color:#666}
-    .row-label{background:#fafafa;font-weight:bold;text-align:left;width:100px}
-    input{width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:15px;outline:none}
-    /* 核心：变动红字样式 */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; padding: 15px; color: #333; }
+    .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); overflow: hidden; position: relative; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; }
+    .content { padding: 20px; }
+    .section { margin-bottom: 30px; }
+    .section-title { font-size: 18px; color: #667eea; font-weight: bold; margin-bottom: 12px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: fixed; }
+    th, td { border: 1px solid #e0e0e0; padding: 10px; text-align: center; font-size: 14px; }
+    th { background: #f8f9fa; color: #666; font-weight: bold; }
+    .row-label { background: #fafafa; font-weight: bold; text-align: left; width: 100px; }
+    input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 15px; outline: none; }
     input.is-changed { color: red !important; font-weight: bold; border: 1px solid red !important; background: #fff5f5; }
-    textarea{width:100%;height:100px;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:15px;outline:none;resize:none}
-    .footer-btn{background:white;padding:20px;text-align:center;border-top:1px solid #eee}
-    .btn-export{width:100%;max-width:400px;padding:15px;background:#28a745;color:white;border:none;border-radius:30px;font-size:18px;font-weight:bold;cursor:pointer}
+    textarea { width: 100%; height: 100px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; outline: none; resize: none; }
+    
+    .footer-btn { background: #fafafa; padding: 20px; display: flex; flex-direction: column; gap: 12px; align-items: center; border-top: 1px solid #eee; }
+    .btn-image { width: 100%; max-width: 400px; padding: 15px; background: #07c160; color: white; border: none; border-radius: 30px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    .btn-export { width: 100%; max-width: 400px; padding: 12px; background: #667eea; color: white; border: none; border-radius: 30px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    .btn-image:active, .btn-export:active { opacity: 0.7; transform: scale(0.98); }
+    
+    /* 时间戳水印样式 - 仅截图时显示 */
+    #timestamp-watermark { display: none; text-align: right; padding: 10px 20px; color: #999; font-size: 12px; font-style: italic; background: white; }
+
+    /* 图片预览浮层 */
+    #preview-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    #preview-image { max-width: 100%; max-height: 80%; border-radius: 8px; box-shadow: 0 0 20px rgba(255,255,255,0.2); }
 </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <h1>🏗️ 尹兵兵 - 土建进度日报</h1>
-        <div id="dateDisplay" style="margin-top:10px;opacity:0.9"></div>
-    </div>
+<div id="capture-area" style="background: #f0f2f5; padding-bottom: 1px;">
+    <div class="container">
+        <div class="header">
+            <h1>🏗️ 尹兵兵 - 土建进度日报</h1>
+            <div id="dateDisplay" style="margin-top:10px;opacity:0.9"></div>
+        </div>
 
-    <div class="content">
-        <div class="section">
-            <div class="section-title">1️⃣ 楼梯间进度 (ST01 - ST06)</div>
-            <table>
-                <thead><tr><th>位置</th><th>脚手架</th><th>钢筋</th><th>模板</th><th>混凝土</th></tr></thead>
-                <tbody id="st_tbody">
+        <div class="content">
+            <div class="section">
+                <div class="section-title">1.楼梯间进度 (ST01 - ST06)</div>
+                <table>
+                    <thead><tr><th>位置</th><th>脚手架</th><th>钢筋</th><th>模板</th><th>混凝土</th></tr></thead>
+                    <tbody id="st_tbody"></tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <div class="section-title">2.电梯井进度 (LF)</div>
+                <table>
+                    <thead><tr><th>位置</th><th>脚手架</th><th>钢筋</th><th>模板</th><th>混凝土</th></tr></thead>
+                    <tbody>
+                        <tr><td class="row-label">LF01/02</td><td><input type="number" data-key="lf0102_sc"></td><td><input type="number" data-key="lf0102_re"></td><td><input type="number" data-key="lf0102_fo"></td><td><input type="number" data-key="lf0102_co"></td></tr>
+                        <tr><td class="row-label">LF03</td><td><input type="number" data-key="lf03_sc"></td><td><input type="number" data-key="lf03_re"></td><td><input type="number" data-key="lf03_fo"></td><td><input type="number" data-key="lf03_co"></td></tr>
+                        <tr><td class="row-label">GLF01/02</td><td><input type="number" data-key="glf0102_sc"></td><td><input type="number" data-key="glf0102_re"></td><td><input type="number" data-key="glf0102_fo"></td><td><input type="number" data-key="glf0102_co"></td></tr>
                     </tbody>
-            </table>
-        </div>
+                </table>
+            </div>
 
-        <div class="section">
-            <div class="section-title">2️⃣ 电梯井进度 (LF)</div>
-            <table>
-                <thead><tr><th>位置</th><th>脚手架</th><th>钢筋</th><th>模板</th><th>混凝土</th></tr></thead>
-                <tbody>
-                    <tr><td class="row-label">LF01/02</td>
-                        <td><input type="number" data-key="lf0102_sc"></td><td><input type="number" data-key="lf0102_re"></td>
-                        <td><input type="number" data-key="lf0102_fo"></td><td><input type="number" data-key="lf0102_co"></td></tr>
-                    <tr><td class="row-label">LF03</td>
-                        <td><input type="number" data-key="lf03_sc"></td><td><input type="number" data-key="lf03_re"></td>
-                        <td><input type="number" data-key="lf03_fo"></td><td><input type="number" data-key="lf03_co"></td></tr>
-                    <tr><td class="row-label">GLF01/02</td>
-                        <td><input type="number" data-key="glf0102_sc"></td><td><input type="number" data-key="glf0102_re"></td>
-                        <td><input type="number" data-key="glf0102_fo"></td><td><input type="number" data-key="glf0102_co"></td></tr>
-                </tbody>
-            </table>
-        </div>
+            <div class="section">
+                <div class="section-title">3.1F预制构件顶部浇筑进度</div>
+                <table>
+                    <thead><tr><th>区域</th><th>梁进度</th><th>柱进度</th></tr></thead>
+                    <tbody>
+                        <tr><td class="row-label">Zone A</td><td><input type="number" data-key="f1_za_beam"></td><td><input type="number" data-key="f1_za_column"></td></tr>
+                        <tr><td class="row-label">Zone B</td><td><input type="number" data-key="f1_zb_beam"></td><td><input type="number" data-key="f1_zb_column"></td></tr>
+                        <tr><td class="row-label">Zone C</td><td><input type="number" data-key="f1_zc_beam"></td><td><input type="number" data-key="f1_zc_column"></td></tr>
+                        <tr><td class="row-label">Zone D</td><td><input type="number" data-key="f1_zd_beam"></td><td><input type="number" data-key="f1_zd_column"></td></tr>
+                    </tbody>
+                </table>
+            </div>
 
-        <div class="section">
-            <div class="section-title">3️⃣ 区域进度 (Zone A-C)</div>
-            <table>
-                <thead><tr><th>区域</th><th>梁进度</th><th>板进度</th><th>柱进度</th></tr></thead>
-                <tbody>
-                    <tr><td class="row-label">Zone A</td>
-                        <td><input type="number" data-key="za_beam"></td><td><input type="number" data-key="za_slab"></td><td><input type="number" data-key="za_column"></td></tr>
-                    <tr><td class="row-label">Zone B</td>
-                        <td><input type="number" data-key="zb_beam"></td><td><input type="number" data-key="zb_slab"></td><td><input type="number" data-key="zb_column"></td></tr>
-                    <tr><td class="row-label">Zone C</td>
-                        <td><input type="number" data-key="zc_beam"></td><td><input type="number" data-key="zc_slab"></td><td><input type="number" data-key="zc_column"></td></tr>
-                </tbody>
-            </table>
-        </div>
+            <div class="section">
+                <div class="section-title">4.2F预制构件顶部浇筑进度</div>
+                <table>
+                    <thead><tr><th>区域</th><th>梁进度</th><th>柱进度</th></tr></thead>
+                    <tbody>
+                        <tr><td class="row-label">Zone A</td><td><input type="number" data-key="f2_za_beam"></td><td><input type="number" data-key="f2_za_column"></td></tr>
+                        <tr><td class="row-label">Zone B</td><td><input type="number" data-key="f2_zb_beam"></td><td><input type="number" data-key="f2_zb_column"></td></tr>
+                        <tr><td class="row-label">Zone C</td><td><input type="number" data-key="f2_zc_beam"></td><td><input type="number" data-key="f2_zc_column"></td></tr>
+                        <tr><td class="row-label">Zone D</td><td><input type="number" data-key="f2_zd_beam"></td><td><input type="number" data-key="f2_zd_column"></td></tr>
+                    </tbody>
+                </table>
+            </div>
 
-        <div class="section">
-            <div class="section-title">📝 今日备注 (将导出至表格末尾)</div>
-            <textarea id="memo" data-key="ybb_memo" placeholder="在此输入特殊情况、进度滞后说明或明日计划..."></textarea>
+            <div class="section">
+                <div class="section-title">📝 今日备注</div>
+                <textarea id="memo" data-key="ybb_memo" placeholder="在此输入特殊情况、进度滞后说明或明日计划..."></textarea>
+            </div>
         </div>
-    </div>
-
-    <div class="footer-btn">
-        <button class="btn-export" onclick="submitAndExport()">✅ 提交并导出最终报表</button>
+        <div id="timestamp-watermark"></div>
     </div>
 </div>
 
-<script>
-    const storageKey = "ybb_data_final";
-    const baseKey = "ybb_base_final";
+<div class="footer-btn">
+    <button class="btn-image" onclick="generateImage()">📸 生成微信报表图片</button>
+    <button class="btn-export" onclick="submitAndExport()">📊 导出Excel表格文件</button>
+</div>
 
-    // 动态生成 ST01-06
+<div id="preview-overlay">
+    <p style="color:white;margin-bottom:15px;font-weight:bold">图片已生成！长按下方图片保存</p>
+    <img id="preview-image" src="" alt="报表预览">
+    <button onclick="closePreview()" style="margin-top:20px;padding:12px 40px;border-radius:25px;border:none;background:#ff4d4f;color:white;font-size:16px;cursor:pointer">关闭预览</button>
+</div>
+
+<script>
+    const storageKey = "ybb_data_final_v5";
+    const baseKey = "ybb_base_final_v5";
+
+    // 1. 初始化 ST01-06 表格
     const stTbody = document.getElementById('st_tbody');
     for(let i=1; i<=6; i++){
         const id = 'st0' + i;
@@ -100,58 +124,81 @@
                 <td><input type="number" data-key="${id}_fo"></td><td><input type="number" data-key="${id}_co"></td></tr>`;
     }
 
-    // 初始化：加载草稿 & 比对基准
+    // 2. 页面加载逻辑
     window.onload = function() {
         document.getElementById('dateDisplay').innerText = "填报日期：" + new Date().toLocaleDateString();
-        
         const base = JSON.parse(localStorage.getItem(baseKey) || '{}');
         const draft = JSON.parse(localStorage.getItem(storageKey) || '{}');
 
         document.querySelectorAll('input[data-key], textarea[data-key]').forEach(el => {
             const k = el.dataset.key;
-            el.value = draft[k] || ""; // 恢复填写的草稿
-
-            // 只有数字输入框进行红字比对
+            el.value = draft[k] || ""; 
+            
+            // 初始红字判断
             if(el.tagName === 'INPUT' && el.value !== "" && el.value != (base[k] || "0")){
                 el.classList.add('is-changed');
             }
 
-            // 实时保存草稿并触发变色
+            // 实时保存和变色
             el.oninput = function() {
                 const currentDraft = JSON.parse(localStorage.getItem(storageKey) || '{}');
                 currentDraft[k] = this.value;
                 localStorage.setItem(storageKey, JSON.stringify(currentDraft));
 
                 if(this.tagName === 'INPUT'){
-                    if(this.value != (base[k] || "0")){
-                        this.classList.add('is-changed');
-                    } else {
-                        this.classList.remove('is-changed');
-                    }
+                    if(this.value != (base[k] || "0")) this.classList.add('is-changed');
+                    else this.classList.remove('is-changed');
                 }
             };
         });
     };
 
+    // 3. 生成微信图片功能
+    async function generateImage() {
+        const watermark = document.getElementById('timestamp-watermark');
+        const now = new Date();
+        watermark.innerText = "尹兵兵确认于: " + now.toLocaleString();
+        watermark.style.display = "block"; 
+
+        const captureArea = document.getElementById('capture-area');
+        
+        try {
+            const canvas = await html2canvas(captureArea, {
+                useCORS: true,
+                scale: 2, // 2倍采样提高文字清晰度
+                backgroundColor: "#f0f2f5",
+                logging: false
+            });
+            
+            const imgData = canvas.toDataURL("image/png");
+            document.getElementById('preview-image').src = imgData;
+            document.getElementById('preview-overlay').style.display = "flex";
+            watermark.style.display = "none"; 
+        } catch (err) {
+            alert("生成图片失败，请重试");
+            console.error(err);
+        }
+    }
+
+    function closePreview() {
+        document.getElementById('preview-overlay').style.display = "none";
+    }
+
+    // 4. 导出Excel功能 (同时更新基准)
     function submitAndExport() {
         const currentData = {};
         let excelRows = "";
         const dateStr = new Date().toLocaleDateString();
 
-        // 1. 抓取所有表格数据
         document.querySelectorAll('.section').forEach(sec => {
             const title = sec.querySelector('.section-title')?.innerText;
             const table = sec.querySelector('table');
-            
             if(table) {
-                // 添加章节标题行
                 excelRows += `<tr style="background:#d9e1f2"><td colspan="2"><b>${title}</b></td></tr>`;
                 const headers = Array.from(table.querySelectorAll('th')).map(th => th.innerText);
-                
                 table.querySelectorAll('tbody tr').forEach(tr => {
                     const rowName = tr.querySelector('.row-label').innerText;
                     excelRows += `<tr style="background:#f2f2f2"><td colspan="2"><b>${rowName}</b></td></tr>`;
-
                     tr.querySelectorAll('input').forEach((inp, idx) => {
                         const val = inp.value || "0";
                         currentData[inp.dataset.key] = val;
@@ -163,17 +210,13 @@
             }
         });
 
-        // 2. 抓取备注并追加到最后
         const memoVal = document.getElementById('memo').value;
         currentData['ybb_memo'] = memoVal;
-        if(memoVal){
-            excelRows += `<tr style="background:#fff2cc"><td><b>今日备注</b></td><td style="text-align:left">${memoVal}</td></tr>`;
-        }
+        if(memoVal) excelRows += `<tr style="background:#fff2cc"><td><b>今日备注</b></td><td style="text-align:left">${memoVal}</td></tr>`;
 
-        // 3. 存为新的比对基准
+        // 核心：点击导出后，将当前数据设为新的对比基准，下次输入变动才会变红
         localStorage.setItem(baseKey, JSON.stringify(currentData));
 
-        // 4. 执行导出
         const template = `
             <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
             <head><meta charset="utf-8"></head>
@@ -193,7 +236,7 @@
         link.download = `尹兵兵_日报_${dateStr}.xls`;
         link.click();
         
-        alert("大尹工幸苦了！记得把导出的文件发群里。");
+        alert("Excel 已导出，数据已存档作为明日比对基准！");
     }
 </script>
 </body>

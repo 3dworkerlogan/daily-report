@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC吊装统计</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: white;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            color: #000;
+        }
+        
+        .date {
+            font-size: 24px;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #ddd;
+        }
+        
+        .section:last-of-type {
+            border-bottom: none;
+        }
+        
+        .section h2 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #000;
+        }
+        
+        .input-row {
+            margin-bottom: 15px;
+        }
+        
+        .input-row label {
+            display: block;
+            font-size: 20px;
+            margin-bottom: 8px;
+            color: #000;
+        }
+        
+        .input-row input {
+            width: 100%;
+            padding: 15px;
+            font-size: 28px;
+            border: 2px solid #000;
+            text-align: center;
+        }
+        
+        .stats {
+            margin-top: 20px;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            font-size: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .stats-row:last-child {
+            border-bottom: none;
+        }
+        
+        .stats-row.highlight {
+            font-size: 24px;
+            font-weight: bold;
+            background: #e0e0e0;
+            padding: 15px;
+            margin: 10px -20px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            border: 2px solid #000;
+            background: white;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+        
+        button:active {
+            background: #000;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>PC吊装统计</h1>
+    <div class="date" id="currentDate"></div>
+    
+    <!-- 梁 -->
+    <div class="section">
+        <h2>梁</h2>
+        <div class="input-row">
+            <label>今日吊装(根):</label>
+            <input type="number" id="beam" min="0" placeholder="0" oninput="calc()" />
+        </div>
+        <div class="stats">
+            <div class="stats-row">
+                <span>今日:</span>
+                <span id="beam_today">0 根</span>
+            </div>
+            <div class="stats-row highlight">
+                <span>累计:</span>
+                <input type="number" id="beam_total_input" min="0" placeholder="0" 
+                       style="width: 150px; padding: 8px; font-size: 20px; border: 2px solid #000; text-align: center;" 
+                       oninput="calcRemain()" />
+            </div>
+            <div class="stats-row">
+                <span>计划:</span>
+                <span>127 根</span>
+            </div>
+            <div class="stats-row highlight">
+                <span>还差:</span>
+                <span id="beam_remain">127 根</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 预制板 -->
+    <div class="section">
+        <h2>预制板</h2>
+        <div class="input-row">
+            <label>今日吊装(块):</label>
+            <input type="number" id="slab" min="0" placeholder="0" oninput="calc()" />
+        </div>
+        <div class="stats">
+            <div class="stats-row">
+                <span>今日:</span>
+                <span id="slab_today">0 块</span>
+            </div>
+            <div class="stats-row highlight">
+                <span>累计:</span>
+                <input type="number" id="slab_total_input" min="0" placeholder="0" 
+                       style="width: 150px; padding: 8px; font-size: 20px; border: 2px solid #000; text-align: center;" 
+                       oninput="calcRemain()" />
+            </div>
+            <div class="stats-row">
+                <span>计划:</span>
+                <span>331 块</span>
+            </div>
+            <div class="stats-row highlight">
+                <span>还差:</span>
+                <span id="slab_remain">331 块</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 柱 -->
+    <div class="section">
+        <h2>柱</h2>
+        <div class="input-row">
+            <label>今日吊装(根):</label>
+            <input type="number" id="column" min="0" placeholder="0" oninput="calc()" />
+        </div>
+        <div class="stats">
+            <div class="stats-row">
+                <span>今日:</span>
+                <span id="column_today">0 根</span>
+            </div>
+            <div class="stats-row highlight">
+                <span>累计:</span>
+                <input type="number" id="column_total_input" min="0" placeholder="0" 
+                       style="width: 150px; padding: 8px; font-size: 20px; border: 2px solid #000; text-align: center;" 
+                       oninput="calcRemain()" />
+            </div>
+            <div class="stats-row">
+                <span>计划:</span>
+                <span>111 根</span>
+            </div>
+            <div class="stats-row highlight">
+                <span>还差:</span>
+                <span id="column_remain">111 根</span>
+            </div>
+        </div>
+    </div>
+    
+    <button onclick="save()">保存</button>
+    <button onclick="copyToWeChat()">复制到微信</button>
+    <button onclick="exportData()">导出Excel</button>
+    
+    <script>
+        const PLAN = { beam: 127, slab: 331, column: 111 };
+        
+        function getDate() {
+            const d = new Date();
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const weeks = ['日','一','二','三','四','五','六'];
+            return {
+                full: `${y}-${m}-${day}`,
+                display: `${y}年${m}月${day}日 星期${weeks[d.getDay()]}`,
+                key: `${y}${m}${day}`
+            };
+        }
+        
+        document.getElementById('currentDate').textContent = getDate().display;
+        
+        function getHistory() {
+            const today = getDate().key;
+            let total = { beam: 0, slab: 0, column: 0 };
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith('lift_') && k !== `lift_${today}`) {
+                    const d = JSON.parse(localStorage.getItem(k));
+                    total.beam += parseInt(d.beam) || 0;
+                    total.slab += parseInt(d.slab) || 0;
+                    total.column += parseInt(d.column) || 0;
+                }
+            }
+            return total;
+        }
+        
+        function calc() {
+            const beam = parseInt(document.getElementById('beam').value) || 0;
+            const slab = parseInt(document.getElementById('slab').value) || 0;
+            const column = parseInt(document.getElementById('column').value) || 0;
+            
+            const hist = getHistory();
+            
+            document.getElementById('beam_today').textContent = beam + ' 根';
+            document.getElementById('slab_today').textContent = slab + ' 块';
+            document.getElementById('column_today').textContent = column + ' 根';
+            
+            // 自动计算累计(历史+今日)
+            document.getElementById('beam_total_input').value = hist.beam + beam;
+            document.getElementById('slab_total_input').value = hist.slab + slab;
+            document.getElementById('column_total_input').value = hist.column + column;
+            
+            calcRemain();
+        }
+        
+        function calcRemain() {
+            // 根据累计计算剩余
+            const beamTotal = parseInt(document.getElementById('beam_total_input').value) || 0;
+            const slabTotal = parseInt(document.getElementById('slab_total_input').value) || 0;
+            const columnTotal = parseInt(document.getElementById('column_total_input').value) || 0;
+            
+            document.getElementById('beam_remain').textContent = Math.max(0, PLAN.beam - beamTotal) + ' 根';
+            document.getElementById('slab_remain').textContent = Math.max(0, PLAN.slab - slabTotal) + ' 块';
+            document.getElementById('column_remain').textContent = Math.max(0, PLAN.column - columnTotal) + ' 根';
+        }
+        
+        function load() {
+            const key = getDate().key;
+            const saved = localStorage.getItem(`lift_${key}`);
+            if (saved) {
+                const d = JSON.parse(saved);
+                document.getElementById('beam').value = d.beam || '';
+                document.getElementById('slab').value = d.slab || '';
+                document.getElementById('column').value = d.column || '';
+                
+                // 如果有保存的累计数据,直接使用
+                if (d.beam_total) {
+                    document.getElementById('beam_total_input').value = d.beam_total;
+                    document.getElementById('slab_total_input').value = d.slab_total;
+                    document.getElementById('column_total_input').value = d.column_total;
+                    
+                    // 更新今日显示
+                    const beam = parseInt(d.beam) || 0;
+                    const slab = parseInt(d.slab) || 0;
+                    const column = parseInt(d.column) || 0;
+                    document.getElementById('beam_today').textContent = beam + ' 根';
+                    document.getElementById('slab_today').textContent = slab + ' 块';
+                    document.getElementById('column_today').textContent = column + ' 根';
+                    
+                    calcRemain();
+                } else {
+                    // 没有保存的累计数据,自动计算
+                    calc();
+                }
+            } else {
+                calc();
+            }
+        }
+        
+        function save() {
+            const data = {
+                date: getDate().full,
+                beam: document.getElementById('beam').value || '0',
+                slab: document.getElementById('slab').value || '0',
+                column: document.getElementById('column').value || '0',
+                beam_total: document.getElementById('beam_total_input').value || '0',
+                slab_total: document.getElementById('slab_total_input').value || '0',
+                column_total: document.getElementById('column_total_input').value || '0'
+            };
+            localStorage.setItem(`lift_${getDate().key}`, JSON.stringify(data));
+            alert('保存成功');
+        }
+        
+        function exportData() {
+            const keys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith('lift_')) keys.push(k);
+            }
+            
+            if (keys.length === 0) {
+                alert('暂无数据');
+                return;
+            }
+            
+            let csv = '日期,梁,预制板,柱\n';
+            keys.sort().forEach(k => {
+                const d = JSON.parse(localStorage.getItem(k));
+                csv += `${d.date},${d.beam},${d.slab},${d.column}\n`;
+            });
+            
+            const hist = getHistory();
+            const today = {
+                beam: parseInt(document.getElementById('beam').value) || 0,
+                slab: parseInt(document.getElementById('slab').value) || 0,
+                column: parseInt(document.getElementById('column').value) || 0
+            };
+            
+            csv += '\n汇总\n';
+            csv += `累计,${hist.beam + today.beam},${hist.slab + today.slab},${hist.column + today.column}\n`;
+            csv += `计划,${PLAN.beam},${PLAN.slab},${PLAN.column}\n`;
+            csv += `还差,${PLAN.beam - hist.beam - today.beam},${PLAN.slab - hist.slab - today.slab},${PLAN.column - hist.column - today.column}\n`;
+            
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `吊装统计_${getDate().full}.csv`;
+            a.click();
+            alert('导出成功');
+        }
+        
+        function copyToWeChat() {
+            const dateInfo = getDate();
+            const beam = parseInt(document.getElementById('beam').value) || 0;
+            const slab = parseInt(document.getElementById('slab').value) || 0;
+            const column = parseInt(document.getElementById('column').value) || 0;
+            
+            const beamTotal = parseInt(document.getElementById('beam_total_input').value) || 0;
+            const slabTotal = parseInt(document.getElementById('slab_total_input').value) || 0;
+            const columnTotal = parseInt(document.getElementById('column_total_input').value) || 0;
+            
+            const beamRemain = Math.max(0, PLAN.beam - beamTotal);
+            const slabRemain = Math.max(0, PLAN.slab - slabTotal);
+            const columnRemain = Math.max(0, PLAN.column - columnTotal);
+            
+            const text = `${dateInfo.display}吊装统计
+吊装梁${beam}根，统计${beamTotal}，共计${PLAN.beam}根，还差${beamRemain}根，
+吊装预制板${slab}块，统计${slabTotal}块，共计${PLAN.slab}块，还差${slabRemain}块
+吊装柱${column}根，统计${columnTotal}根，共计${PLAN.column}根，还差${columnRemain}根，`;
+            
+            // 复制到剪贴板
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('已复制到剪贴板！\n可以直接粘贴到微信了');
+                }).catch(() => {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+        
+        function fallbackCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                alert('已复制到剪贴板！\n可以直接粘贴到微信了');
+            } catch (err) {
+                alert('复制失败，请手动复制:\n\n' + text);
+            }
+            document.body.removeChild(textarea);
+        }
+        
+        window.onload = load;
+    </script>
+</body>
+</html>.
